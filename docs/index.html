@@ -1,0 +1,1046 @@
+
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<!--
+Created using JS Bin
+http://jsbin.com
+
+Copyright (c) 2019 by miklpudding (http://jsbin.com/sofofam/16/edit)
+
+Released under the MIT license: http://jsbin.mit-license.org
+-->
+<meta name="robots" content="noindex">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="http://cdn.muicss.com/mui-0.9.27/css/mui.min.css" rel="stylesheet" type="text/css" />
+    <script src="http://cdn.muicss.com/mui-0.9.27/js/mui.min.js"></script>
+    <style>
+
+    td[data-value="NaN"] {
+      color: #ddd;
+    }
+    td[data-value="Infinity"] {
+      color: #ddd;
+    }
+    </style>
+    <script>
+
+    var tokensData = [
+      {
+        "Name": "目玉N(ソロのみ)",
+        "AP": 10,
+        "BP": 0,
+        "Meat": 0,
+        "Honor": 500,
+        "Tokens": { "host": 3, "join": 0, "mvp": 0 },
+        "HP": 7500,
+      },
+      {
+        "Name": "目玉H(ソロのみ)",
+        "AP": 15,
+        "BP": 1,
+        "Meat": 0,
+        "Honor": 1300,
+        // "Tokens": { "host": 6, "join": 2, "mvp": 3 }, //TODO: mvp: 0
+        "Tokens": { "host": 11, "join": 0, "mvp": 0 },
+        "HP": 800000,
+      },
+      {
+        "Name": "目玉VH(ソロのみ)",
+        "AP": 25,
+        "BP": 1,
+        "Meat": 0,
+        "Honor": 3000,
+        // "Tokens": { "host": 12, "join": 4, "mvp": 6 }, //TODO: mvp: 0
+        "Tokens": { "host": 22, "join": 0, "mvp": 0 },
+        "HP": 1200000,
+      },
+      {
+        "Name": "犬VH",
+        "AP": 30,
+        "BP": 1,
+        "Meat": 0,
+        "Honor": 13000,
+        "Tokens": { "host": 14, "join": 6, "mvp": 8 },
+        "HP": 4800000,
+      },
+      {
+        "Name": "犬Ex",
+        "AP": 35,
+        "BP": 1,
+        "Meat": 0,
+        "Honor": 30000,
+        "Tokens": { "host": 24, "join": 10, "mvp": 10 },
+        "HP": 9000000,
+      },
+      {
+        "Name": "犬Ex+",
+        "AP": 40,
+        "BP": 1,
+        "Meat": 0,
+        "Honor": 51000,
+        "Tokens": { "host": 32, "join": 12, "mvp": 12 },
+        "HP": 15550000,
+      },
+      {
+        "Name": "90Hell",
+        "AP": 30,
+        "BP": 2,
+        "Meat": 5,
+        "Honor": 260000,
+        // 2017-12:  "Tokens": { "host": 40, "join": 20, "mvp": 18 },
+        "Tokens": { "host": 45, "join": 20, "mvp": 18 },
+        // 2018-07: 41000000
+        "HP": 42000000,
+      },
+      {
+        "Name": "95Hell",
+        "AP": 40,
+        "BP": 3,
+        "Meat": 10,
+        "Honor": 910000,
+        // "Tokens": { "host": 42, "join": 30, "mvp": 20 },
+        "Tokens": { "host": 55, "join": 30, "mvp": 26 },
+        // 2018-07: "HP": 125000000,
+        "HP": 131500000,
+      },
+      {
+        "Name": "100Hell",
+        "AP": 50,
+        "BP": 3,
+        "Meat": 20,
+        "Honor": 2650000,
+        // "Tokens": { "host": 44, "join": 48, "mvp": 22 },
+        "Tokens": { "host": 80, "join": 48, "mvp": 40 },
+        // 2018-07: "HP": 275000000,
+        "HP": 288750000,
+      },
+    ];
+
+    function HMStoS(x) {
+      var v = 0;
+      var m = x.match(/(?:(\d*):)?(\d+):(\d+)$/);
+      if (m) {
+        v += (parseInt(m[1]) || 0) * 3600
+        v += parseInt(m[2]) * 60
+        v += parseInt(m[3])
+      }
+      return v;
+    }
+
+    function StoHMS(v) {
+      var h = Math.floor(v / 3600);
+      var m = Math.floor((v - (h*3600)) / 60);
+      var s = v - (h*3600) - (m*60);
+      if (10 > h) h = "0" + h;
+      if (10 > m) m = "0" + m;
+      if (10 > s) s = "0" + s;
+
+      return [h, m, s].join(":");
+    }
+
+    function formulaTableView4(form) {
+      var host = form["host"].checked;
+      var mvp = form["mvp"].checked;
+      var half = parseInt(form["halfAP"].value);
+      var view = document.getElementById("tableView4");
+      var type = form["type"].value;
+      var isTime = type == "時間(分:秒)";
+      form[isTime ? "time" : "honor"].style.display = "inline";
+      form[!isTime ? "time" : "honor"].style.display = "none";
+
+      var time = HMStoS(form["time"].value);
+      var honor = parseInt(form["honor"].value);
+
+      var data = {};
+      for (var i in tokensData) {
+        var v = tokensData[i];
+        var key = v["Name"];
+        data[key] = v;
+      }
+
+      for (var i =0; i<view.rows.length; ++i) {
+        var row = view.rows[i];
+        if (row) {
+          var key = row.cells[0].innerText;
+          var speed = HMStoS(row.cells[1].children[0].value);
+          var unit = data[key];
+          var tokens = unit["Tokens"];
+          var count = Math.floor(isTime ? (time/speed) : (honor/unit["Honor"]));
+          if (!isTime && honor > unit["Honor"]*count)
+            count += 1;
+
+          var chunk = unit["Meat"] * count;
+          var ap = unit["AP"] * count; ap = ap + "(" + Math.ceil(ap/half) + ")";
+          var bp = unit["BP"] * count;
+          var honor_ = unit["Honor"] * count;
+          var total = speed * count;
+          var token = count * (tokens["join"] + (host ? tokens["host"] : 0) + (mvp ? tokens["mvp"] : 0));
+          var dsp = (unit["HP"] / speed).toFixed();
+          var xs = [dsp, count, chunk, ap, bp, token, honor_, StoHMS(total)];
+
+          for (var j=2; j<row.cells.length; ++j) {
+            row.cells[j].innerText = xs[j-2]
+          }
+        }
+      }
+    }
+
+    function formulaTableView3(form) {
+      var value = form["token"].value;
+      var host = form["host"].checked;
+      var mvp = form["mvp"].checked;
+      var half = (form["halfAP"].value / 1).toFixed()
+      var view = document.getElementById("TableView3");
+      var tr = function(row){ return "<tr>" + row.join("") + "</tr>"; };
+      var td = function(text){ return "<td data-value='"+text+"'>" + text + "</td>"; };
+      var tbody = [];
+
+      for (var i in tokensData) {
+        var x = tokensData[i]
+        var tokens = x["Tokens"];
+        var count = (value / (
+          (host ? tokens["host"] : 0) +
+          (mvp ? tokens["mvp"] : 0) +
+          tokens["join"]
+        )).toFixed();
+
+        var row = [
+          x["Name"],
+          count,
+          (host ? (x["Meat"] * count).toFixed() : NaN),
+          (host ? (x["AP"] * count).toFixed() : NaN),
+          (host ? (x["AP"] * count / half).toFixed() : NaN),
+          (!host ? (x["BP"] * count).toFixed() : NaN)
+        ];
+        tbody.push(tr(row.map(td)))
+      }
+
+      view.innerHTML = tbody.join("");
+    }
+
+    </script>
+  </head>
+  <body>
+
+    <!-- APP BAR -->
+    <div class="mui-appbar">
+    <table width="100%">
+      <tr style="vertical-align:middle;">
+        <td class="mui--appbar-height">
+        グラブル 古戦場用 AP/BP消費量計算
+        </td>
+        <td class="mui--appbar-height" align="right">
+        <!-- created by けい ID: 14209944 -->
+        </td>
+      </tr>
+    </table>
+    </div>
+
+    <!-- TAB -->
+    <ul class="mui-tabs__bar mui-tabs__bar--justified">
+      <li class="mui--is-active"><a data-mui-toggle="tab" data-mui-controls="pane-justified-1">チャンクを稼ぐ</a></li>
+      <li><a data-mui-toggle="tab" data-mui-controls="pane-justified-2">貢献度を稼ぐ</a></li>
+      <li><a data-mui-toggle="tab" data-mui-controls="pane-justified-3">戦貨を稼ぐ</a></li>
+      <li><a data-mui-toggle="tab" data-mui-controls="pane-justified-4">周回/時間</a></li>
+    </ul>
+
+    <div class="mui-tabs__pane mui--is-active" id="pane-justified-1">
+      <div class="mui-panel">
+
+      <table class="mui-table mui-table--bordered">
+        <thead>
+        <tr>
+        <th>難易度</th>
+        <th>HP</th>
+        <th>AP</th>
+        <th>BP</th>
+        <th>獲得チャンク</th>
+        </tr>
+        </thead>
+        <tr>
+        <td>目玉 N</td>
+        <td>7.5万</td>
+        <td>10</td>
+        <td>x</td>
+        <td>0～1/3</td>
+        </tr>
+        <tr>
+        <td>目玉 H</td>
+        <td>80万</td>
+        <td>15</td>
+        <td>1</td>
+        <td>0～2/3</td>
+        </tr>
+        <tr>
+        <td>目玉 VH</td>
+        <td>120万</td>
+        <td>25</td>
+        <td>1</td>
+        <td>0～3/3</td>
+        </tr>
+        <tr>
+        <td>犬 VH</td>
+        <td>480万</td>
+        <td>30</td>
+        <td>1</td>
+        <td>0～1</td>
+        </tr>
+        <tr>
+        <td>犬 Ex</td>
+        <td>900万</td>
+        <td>35</td>
+        <td>1</td>
+        <td>0～3</td>
+        </tr>
+        <tr>
+        <td>犬 Ex+</td>
+        <td>1555万</td>
+        <td>40</td>
+        <td>1</td>
+        <td>0～5</td>
+        </tr>
+        <tbody>
+        </tbody>
+      </table>
+
+      <p>※ 妖しい臓肉は1/3チャンク換算</p>
+      <hr>
+
+      <h2>MEMO</h2>
+      <ul>
+        <li>自発者は、自発赤箱の分チャンク当選の期待値は上がる</li>
+        <li>順位箱はMVP/3位よりも2位が効率良い（らしい）
+          <ul>
+            <li>半汁消耗を抑えて、団全体の保有チャンクを増やしたい場合、団救援を流し2位箱を確保</li>
+          </ul>
+        </li>
+        <li>ドロップ率upはチャンク・栄光の証・武器・石のドロップ数に効果あり
+          <ul>
+            <li>トレハン不要なケース
+            <ul>
+              <li>ソロ狩で速度優先ならトレハンなしで周回数を稼ぐ。</li>
+            </ul>
+            </li>
+            <li>トレハンを入れるケース
+              <ul>
+              <li>ペア狩で周回速度を保てるなら、片方トレハン係も選択肢。</li>
+              <li>時間に余裕があり、AP効率重視でチャンクを稼ぎたい場合。(半汁の節約になる)</li>
+              <li>他、40箱コースの場合で、栄光の証も同時に稼ぎたい場合等。</li>
+              </ul>
+              </li>
+          </ul>
+        </li>
+        <li>ドロップ率UP
+          <ul>
+            <li><input type="checkbox"> 団サポート・風見鶏</li>
+            <li><input type="checkbox"> 軌跡の雫</li>
+            <li><input type="checkbox"> 召喚石(兎・カグヤ) ※ 戦力に余裕があれば</li>
+            <li><input type="checkbox"> ドロップ率upのメイン武器(オリバーやバーナー等)</li>
+            <li><input type="checkbox"> トレジャーハント ※ 討伐速度が落ちるので要検討</li>
+            <li><input type="checkbox"> エッセル</li>
+          </ul>
+        </li>
+        <li>チャンクをイベント中に全部消費したい場合は、半汁残量とチャンク保有量のバランスに注意。<br>
+        チャンク100個を 90Hellで消費する場合、最大AP30x20=600(半汁12本), 最小100Hellで消費する場合 AP50x5=250(半汁5本)
+        </li>
+      </ul>
+      </div>
+    </div>
+
+    <div class="mui-tabs__pane" id="pane-justified-2">
+      <ul class="mui-tabs__bar mui-tabs__bar--justified">
+        <li class="mui--is-active"><a data-mui-toggle="tab" data-mui-controls="pane-justified-2-1">貢献度/消費表</a></li>
+        <li><a data-mui-toggle="tab" data-mui-controls="pane-justified-2-2">貢献度3500万</a></li>
+        <li><a data-mui-toggle="tab" data-mui-controls="pane-justified-2-3">貢献度5000万</a></li>
+        <li><a data-mui-toggle="tab" data-mui-controls="pane-justified-2-4">貢献度1億</a></li>
+        <li><a data-mui-toggle="tab" data-mui-controls="pane-justified-2-5">貢献度2億5000万</a></li>
+        <li><a data-mui-toggle="tab" data-mui-controls="pane-justified-2-6">貢献度10億</a></li>
+      </ul>
+
+      <div class="mui-tabs__pane mui--is-active" id="pane-justified-2-1">
+        <table class="mui-table mui-table--bordered">
+          <thead>
+            <tr>
+            <th>難易度</th>
+            <th>消費AP</th>
+            <th>消費BP</th>
+            <th>消費チャンク</th>
+            <th>HP</th>
+            <th>貢献度</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+            <td>Ex+</td>
+            <td>40</td>
+            <td>1</td>
+            <td>x</td>
+            <td>1555万</td>
+            <td>5万1千</td>
+            </tr>
+            <tr>
+            <td>90HL</td>
+            <td>30</td>
+            <td>2</td>
+            <td>5</td>
+            <td>4000万</td>
+            <td>26万</td>
+            </tr>
+            <tr>
+            <td>95HL</td>
+            <td>40</td>
+            <td>3</td>
+            <td>10</td>
+            <td>1億2500万</td>
+            <td>91万</td>
+            </tr>
+            <tr>
+            <td>100HL</td>
+            <td>50</td>
+            <td>3</td>
+            <td>20</td>
+            <td>2億7500万</td>
+            <td>268万</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="mui-tabs__pane" id="pane-justified-2-2">
+        <table class="mui-table mui-table--bordered">
+          <thead>
+            <tr>
+            <th>難易度</th>
+            <th>周回数</th>
+            <th>消費チャンク</th>
+            <th>消費AP</th>
+            <th>半汁換算</th>
+            <th>消費BP</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+            <td>90HL</td>
+            <td>192</td>
+            <td>960</td>
+            <td>5760</td>
+            <td>115</td>
+            <td>384</td>
+            </tr>
+            <tr>
+            <td>95HL</td>
+            <td>55</td>
+            <td>550</td>
+            <td>2200</td>
+            <td>44</td>
+            <td>165</td>
+            </tr>
+            <tr>
+            <td>100HL</td>
+            <td>18</td>
+            <td>360</td>
+            <td>900</td>
+            <td>18</td>
+            <td>54</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="mui-tabs__pane" id="pane-justified-2-3">
+        <table class="mui-table mui-table--bordered">
+          <thead>
+            <tr>
+            <th>難易度</th>
+            <th>周回数</th>
+            <th>消費チャンク</th>
+            <th>消費AP</th>
+            <th>半汁換算</th>
+            <th>消費BP</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+            <td>90HL</td>
+            <td>134</td>
+            <td>675</td>
+            <td>4050</td>
+            <td>81</td>
+            <td>270</td>
+            </tr>
+            <tr>
+            <td>95HL</td>
+            <td>38</td>
+            <td>380</td>
+            <td>1560</td>
+            <td>31</td>
+            <td>117</td>
+            </tr>
+            <tr>
+            <td>100HL</td>
+            <td>12</td>
+            <td>260</td>
+            <td>650</td>
+            <td>13</td>
+            <td>39</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="mui-tabs__pane" id="pane-justified-2-4">
+        <table class="mui-table mui-table--bordered">
+          <thead>
+            <tr>
+            <th>難易度</th>
+            <th>周回数</th>
+            <th>消費チャンク</th>
+            <th>消費AP</th>
+            <th>半汁換算</th>
+            <th>消費BP</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+            <td>90HL</td>
+            <td>385</td>
+            <td>1925</td>
+            <td>11550</td>
+            <td>231</td>
+            <td>330</td>
+            </tr>
+            <tr>
+            <td>95HL</td>
+            <td>110</td>
+            <td>1100</td>
+            <td>4400</td>
+            <td>88</td>
+            <td>330</td>
+            </tr>
+            <tr>
+            <td>100HL</td>
+            <td>38</td>
+            <td>760</td>
+            <td>1900</td>
+            <td>38</td>
+            <td>114</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="mui-tabs__pane" id="pane-justified-2-5">
+        <table class="mui-table mui-table--bordered">
+          <thead>
+            <tr>
+            <th>難易度</th>
+            <th>周回数</th>
+            <th>消費チャンク</th>
+            <th>消費AP</th>
+            <th>半汁換算</th>
+            <th>消費BP</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+            <td>90HL</td>
+            <td>962</td>
+            <td>4810</td>
+            <td>28860</td>
+            <td>578</td>
+            <td>1924</td>
+            </tr>
+            <tr>
+            <td>95HL</td>
+            <td>275</td>
+            <td>2750</td>
+            <td>11000</td>
+            <td>220</td>
+            <td>825</td>
+            </tr>
+            <tr>
+            <td>100HL</td>
+            <td>95</td>
+            <td>1900</td>
+            <td>4750</td>
+            <td>95</td>
+            <td>285</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="mui-tabs__pane" id="pane-justified-2-6">
+        <table class="mui-table mui-table--bordered">
+          <thead>
+            <tr>
+            <th>難易度</th>
+            <th>周回数</th>
+            <th>消費チャンク</th>
+            <th>消費AP</th>
+            <th>半汁換算</th>
+            <th>消費BP</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+            <td>90HL</td>
+            <td>3847</td>
+            <td>19235</td>
+            <td>115410</td>
+            <td>2309</td>
+            <td>7694</td>
+            </tr>
+            <tr>
+            <td>95HL</td>
+            <td>1099</td>
+            <td>10990</td>
+            <td>43960</td>
+            <td>880</td>
+            <td>3297</td>
+            </tr>
+            <tr>
+            <td>100HL</td>
+            <td>378</td>
+            <td>7560</td>
+            <td>18900</td>
+            <td>378</td>
+            <td>1134</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      ※ AP は団全体で必要な総量、半汁は一律 AP 50 換算<br>
+      ※ BP は救援で入った場合の一人当たりの消費量<br>
+      ※ 複数のチームで平行して討伐出来る場合、各自の種(BP)の負担は分散出来ます。<br>
+    </div>
+    
+    <div class="mui-tabs__pane" id="pane-justified-3">
+      <form id="tokenForm" onchange="formulaTableView3(this)" class="mui-form">
+      <fieldset>
+      <select name="token">
+      <option value="2686">1箱目 2686枚</option>
+      <option value="2986">2,3箱目 2986枚</option>
+      <option value="2974">4箱目 2974枚</option>
+      <option value="2000">5箱目以降 2000枚/1箱</option>
+      <option value="11632">1～4箱 累計11632枚</option>
+      <option value="19632">1～8箱 累計19632枚</option>
+      <option value="51632">1～24箱 累計51632枚</option>
+      <option value="83632">1～40箱 累計83632枚</option>
+      <option value="91632">1～44箱 累計91632枚</option>
+      <option value="97632">1～45箱 累計97632枚</option>
+      <option value="100632">1～50箱 累計100632枚</option>
+      </select>
+        自発 <input name="host" type="checkbox">
+        MVP <input name="mvp" type="checkbox">
+        <label>半汁回復量</label> <input name="halfAP" type="input" value="50" />
+        
+      </fieldset>
+      </form>
+
+      <table class="mui-table mui-table--bordered">
+      <thead>
+        <tr>
+        <th>難易度</th>
+        <th>周回数</th>
+        <th>消費チャンク</th>
+        <th>消費AP</th>
+        <th>半汁換算</th>
+        <th>消費BP</th>
+        </tr>
+      </thead>
+      <tbody id="TableView3">
+      </tbody>
+      </table>
+
+      <ul>
+      <li><b>ソロ討伐の場合</b>は、自発・MVPの双方にチェックを入れます。<b>救援の場合</b>、自発のチェックは外します。<br>
+      目玉N は、ソロのみなので自発にチェックしたときのみ表示されます。</li>
+      <li>(ランク133以上の場合？) 半汁換算は<b>最大APの半分</b>なので、半汁で回復するAPの値を入力して下さい。</li>
+      <li>40箱コースの進め方は <a href="https://kamigame.jp/%E3%82%B0%E3%83%A9%E3%83%96%E3%83%AB/%E3%82%A4%E3%83%99%E3%83%B3%E3%83%88/%E6%B1%BA%E6%88%A6%EF%BC%81%E6%98%9F%E3%81%AE%E5%8F%A4%E6%88%A6%E5%A0%B4/%E6%88%A6%E8%B2%A8.html">[神ゲー攻略] 古戦場で効率のよい戦貨の稼ぎ方 - 戦貨ガチャ40箱の進め方</a>
+        が詳しい。要約すると
+        <ul>
+        <li>予選+インターバルで4万、本戦で1日1万枚平均を目途に。(低空で走れない日も考慮する。足りない分は最終日に)</li>
+        <li>時間効率ならVH目玉(但し、AP消耗は大きい) 高速周回出来れば 5000枚/時間 稼ぐことも可能</li>
+        <li>戦貨獲得枚数、ソロ討伐/AP効率では、90＞95＞100＞Ex+ (※ チャンク消耗も考慮する場合は、Ex+が良い)</li>
+        <li>救援/BP効率では、<s>100＞95＞90＞Ex+。MVPが取れるなら Ex+＞100＞Ex＞90＞95
+          <a href="https://gbf.wiki/Unite_and_Fight/September_2017#Tokens_.2F_AP">Tokens(戦貨)/EP(BP)</a>の表を参考</s><br />
+          変更により、100のMVPの効率が良くなった。MVPが取れる場合 100＞Ex+＞Ex＞90＞95、参加報酬のみの場合 100＞Ex+＞Ex＞95=90
+        </li>
+        </ul>
+      </li>
+      <li>1~4箱目の累計枚数は、2017年9月のデータで、リセットせずに底まで引いた場合の戦貨数で計算しています。</li>
+      <li>小数点以下切捨・近似値利用で、プラスマイナス1の範囲で計算誤差はあります。（未検証）</li>
+      </ul>
+    </div>
+
+
+    <div class="mui-tabs__pane" id="pane-justified-4">
+        <form class="mui-form" id="goalForm" onchange="formulaTableView4(this)">
+          <legend>目標</legend>
+          <select name="type">
+          <option>時間(分:秒)</option>
+          <option>貢献度</option>
+          </select>
+          <input name="time" value="60:00">
+          <input name="honor" value="50000000" style="display:none;">
+
+          自発 <input name="host" type="checkbox">
+          MVP <input name="mvp" type="checkbox">
+          <label>半汁回復量</label> <input name="halfAP" type="input" value="50" />
+
+        <table class="mui-table mui-table--bordered">
+          <thead>
+            <th>難易度</th>
+            <th>討伐速度(分:秒)</th>
+            <th>DPS</th>
+            <th>周回数</th>
+            <th>消費チャンク</th>
+            <th>消費AP(半汁)</th>
+            <th>消費BP</th>
+            <th>戦貨</th>
+            <th>貢献度</th>
+            <th>総討伐時間</th>
+          </thead>
+          <tbody id="tableView4">
+            <tr>
+            <th>犬Ex+</th>
+            <td><input value="2:00"></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            </tr>
+            <tr>
+            <th>90Hell</th>
+            <td><input value="5:00"></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            </tr>
+            <tr>
+            <th>95Hell</th>
+            <td><input value="15:00"></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            </tr>
+            <tr>
+            <th>100Hell</th>
+            <td><input value="30:00"></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            </tr>
+          </tbody>
+        </table>
+        </form>
+
+        <h4>利用法</h4>
+        <ol>
+        <li>討伐速度（一体を何秒で倒せるか。自発～石選択の時間も含む）の列を記入。</li>
+        <li>時間 もしくは 貢献度 を選択し、目標とする数値を入力</li>
+        <li>時間を入力した場合は、時間内に稼げる貢献度、<br>貢献度を入力した場合は、その貢献度を稼ぐために必要な時間が算出されます</li>
+        </ol>
+        <h4>用途</h4>
+        <ul>
+        <li>AT2時間の連戦で稼げる貢献度を試算</li>
+        <li>目標貢献度を稼ぐために必要な周回数の計算</li>
+        </ul>
+
+        <!--
+        <h4>使い方(具体例) ソロ討伐の周回の見積もり</h4>
+        <ul>
+        <li>討伐速度の初期値は、適当にキリの良い数値が入ってます。マグナ3凸でソロ討伐程度の速度。</li>
+        <li>ここを、例えば <b>100Hellの討伐速度を 35:00 と入力</b>すると、 DSP(秒間のダメージ)が13万前後で揃って より実際のケースに近くなります。</li>
+        <li>そこから表の分析。100 Hell討伐に35分かかると、時間が中途半端に余り、時間内に稼げる貢献度<b>(貢献度の列の変化を見る)</b>は 90Hell 周回よりも低くなります。</li>
+        <li>目標とする時間を 2時間に増やす<b>(目標の時間に 2:00:00 と入力)</b> と、貢献度は逆転。</li>
+        <li>・・・といった感じで、効率の良い周回ポイントを探します。</li>
+        </ul>
+        -->
+        <hr>
+
+      <div class="mui-container">
+        <h2>討伐速度の目安（HPの規模のみに着目）</h2>
+        <style>
+          .kosen-boss {
+            background-color: #eeeeff;
+          }
+          .shisyou-boss {
+          	background-color: #eeffff;
+          }
+          .coop-boss {
+          	background-color: #ddeeff;
+          }
+          .hl-boss {
+          	background-color: #eeeeee;
+          }
+        </style>
+        <script type="text/javascript">
+        	function _showTable(label, state) {
+        		var el = document.getElementById(label);
+        		if (el) {
+        			el.style.display = state;
+        		}
+        	}
+        	function changeTable(select) {
+        		var label = select[select.selectedIndex].value;
+        		_showTable("water_table", "none");
+        		_showTable("earth_table", "none");
+        		_showTable(label, "table-row-group");
+        	}
+        </script>
+        <form>
+        	<select onchange="changeTable(this)">
+        		<option selected="selected" value="earth_table">土有利</option>
+        		<option value="water_table">水有利</option>
+        	</select>
+        </form>
+        <table class="mui-table mui-table--bordered">
+        <thead>
+          <tr>
+          <th>Name</th>
+          <th>総HP</th>
+          <th>Misc</th>
+          </tr>
+        </thead>
+
+        <!-- begin of 水有利 2018/05/14 -->
+        <tbody id="water_table" style="display:none;">
+          <tr class="shisyou-boss">
+          <td>四象Ex 朱雀</td>
+          <td>720万</td>
+          <td></td>
+          </tr>
+          <tr>
+          <td>コロッサス・マグナ</td>
+          <td>1300万</td>
+          <td></td>
+          </tr>
+          <tr class="kosen-boss">
+          <td>古戦場 Ex+</td>
+          <td>1555万</td>
+          <td></td>
+          </tr>
+          <tr>
+          <td>共闘 Ex4-5 アグニス</td>
+          <td>2500万</td>
+          <td>1750万 + 500万(上) + 250万(下)</td>
+          </tr>
+          <tr class="kosen-boss">
+          <td>古戦場 Hell 90</td>
+          <td>4100万</td>
+          <td></td>
+          </tr>
+          <tr class="shisyou-boss">
+          <td>四象Ex+ アグニス</td>
+          <td>8000万</td>
+          <td>6400万 + 2200万(上) + 1400万(下)</td>
+          </tr>
+          <tr>
+          <td>フラム・グラス</td>
+          <td>1億1900万</td>
+          <td>※ 50-10%迄水属性</td>
+          </tr>
+          <tr class="kosen-boss">
+          <td>古戦場 Hell 95</td>
+          <td>1億2500万</td>
+          <td></td>
+          </tr>
+          <tr>
+          <td>アテナ</td>
+          <td>1億9000万</td>
+          <td>本体 1億4000万、鳥 5000万</td>
+          </tr>
+          <tr>
+          <td>ミカエル</td>
+          <td>2億1100万</td>
+          <td>※ 攻撃・防御ダウン無効、有利以外に70%減の耐性</td>
+          </tr>
+          <tr>
+          <td>コロッサス・マグナHL</td>
+          <td>2億7000万</td>
+          <td>本体 1億7000万、右腕 約1億</td>
+          </tr>
+          <tr class="kosen-boss">
+          <td>古戦場 Hell 100</td>
+          <td>2億7500万</td>
+          <td></td>
+          </tr>
+          <tr>
+          <td>プロメテウスHL</td>
+          <td>3億</td>
+          <td></td>
+          </tr>
+        </tbody>
+        <!--
+        end of 水有利 2018/05/14
+        -->
+        <!-- begin of 土有利 -->
+        <tbody id="earth_table">
+          <tr>
+          	<td>リヴァイアサン・マグナ</td>
+          	<td>1160万</td>
+          	<td></td>
+          </tr>
+          <tr class="coop-boss">
+          	<td>コキュートス･オリジン(共闘Ex3-2)</td>
+          	<td>約1420万</td>
+          	<td></td>
+          </tr>
+          <tr class="coop-boss">
+          	<td>カリスト(共闘Ex4-1)</td>
+          	<td>約1800万</td>
+          	<td></td>
+          </tr>
+          <tr class="coop-boss">
+          	<td>ネプチューン・オリジン(共闘Ex4-2)</td>
+          	<td>約2300万</td>
+          	<td>本体約1500万 ルヴェリエ 約800万</td>
+          </tr>
+          <tr class="kosen-boss">
+          <td>古戦場 Hell 90</td>
+          <td>4100万</td>
+          <td></td>
+          </tr>
+          <tr class="coop-boss">
+          	<td>冥槍の刻(共闘Ex5-2)</td>
+          	<td>約9000万</td>
+          	<td>各 4500万 ？</td>
+          </tr>
+          <tr>
+          	<td>マキュラ=マリウス</td>
+          	<td>1億2000万</td>
+          	<td></td>
+          </tr>
+          <tr class="kosen-boss">
+          <td>古戦場 Hell 95</td>
+          <td>1億2500万</td>
+          <td></td>
+          </tr>
+          <tr class="hl-boss">
+          	<td>マキュラ=マリウスHL</td>
+          	<td>1億8000万</td>
+          	<td></td>
+          </tr>
+          <tr>
+          	<td>グラニ</td>
+          	<td>約2億</td>
+          	<td></td>
+          </tr>
+          <tr>
+          	<td>ガブリエル</td>
+          	<td>約2億</td>
+          	<td>※ 攻撃・防御ダウン無効、有利以外に70%減の耐性</td>
+          </tr>
+          <tr class="hl-boss">
+          	<td>リヴァイアサン・マグナHL</td>
+          	<td>2億500万</td>
+          	<td>本体 1億6900万,青輪 3680万</td>
+          </tr>
+          <tr class="hl-boss">
+          	<td>カー・オン</td>
+          	<td>2億6500万</td>
+          	<td></td>
+          </tr>
+          <tr class="kosen-boss">
+            <td>古戦場 Hell 100</td>
+            <td>2億7500万</td>
+            <td></td>
+          </tr>
+          <tr class="hl-boss">
+          	<td>エウロペ</td>
+          	<td>3億8000万</td>
+          	<td></td>
+          </tr>
+
+        </tbody>
+        <!-- end of 土有利 -->
+        </table>
+
+
+
+        古戦場は団サポ・団アビや回復アイテム等がある事を考えると、<br>
+        規模的には 95Hell は 旧石マルチ以下、100Hell は 新石マルチとマグナHLの間位<br>
+        （敵が複数体の場合は、全部の合計。<u>属性や防御係数は考慮していない</u>）<br>
+        <br>
+
+        実際の速度は団イベ時に測るとして<br>
+        それまでの準備段階で、時間当たりのダメージを測る大雑把な目安とします。<br>
+        <br>
+
+        フラムグラス等の途中での属性変更（技巧編成だと非有利での与ダメージ効率が著しく落ちる）や、<br>
+        複数体の敵は敵全体ダメージ(チェインバーストやチョーク)でDSPを稼げる等の違いがあり、<br>
+        単純な比較は出来ない点には注意。<br>
+        <!-- 短期戦・。長期戦でも区別が必要 ... 説明が細かくなりすぎるので割愛 -->
+        <br>
+
+        ※ 速度計測に用いた編成について、古戦場のスタックサポート込で減衰値に届く場合、<br>
+        最大火力を積まなくても良いこともあるので、古戦場イベントで実際に使う編成は、<br>
+        イベントが始まってから再調整は必要。<br>
+        <br>
+        ※ 四象 は通常枠<b>加算</b>25% 古戦場は<s>別枠<b>乗算</b>30%</s> 最大25% 攻撃up 有<br>
+        <br>
+        <br>
+        <h4>修正履歴</h4>
+        <ul>
+        <li>[2018/05/14] Hell90,95,100 HP調整。</li>
+        <li>[2018/05/14]
+          <ul>
+            <li>前回・前々回の調整内容を反映。</li>
+            <li>Aクラス用の追加勲章の貢献度表を追加。</li>
+            <li>TODO: 周回時間設定のプリセットを追加。</li>
+            <li>討伐速度目安の表を土有利用に変更</li>
+          </ul>
+          </li>
+        <li>[2018/01/14] 2018年1月からの戦貨量の変更を反映</li>
+        <li>[2017/10/29] 四象アグニスのHPが以前の調整前のものだったのを修正</li>
+        </ul>
+      </div>
+    </div>
+
+    <script>
+    // default table view
+    formulaTableView3(document.getElementById("tokenForm"));
+    formulaTableView4(document.getElementById("goalForm"));
+    </script>
+  <script src="http://static.jsbin.com/js/render/edit.js?4.1.7"></script>
+<script>jsbinShowEdit && jsbinShowEdit({"static":"http://static.jsbin.com","root":"http://jsbin.com"});</script>
+<script>
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+ga('create', 'UA-1656750-34', 'auto');
+ga('require', 'linkid', 'linkid.js');
+ga('require', 'displayfeatures');
+ga('send', 'pageview');
+
+</script>
+
+</body>
+</html>
