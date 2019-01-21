@@ -1,21 +1,19 @@
-
 <!doctype html>
 <html>
   <head>
     <meta charset="utf-8">
 <!--
-Created using JS Bin
-http://jsbin.com
+    Created using JS Bin
+    http://jsbin.com
 
-Copyright (c) 2019 by miklpudding (http://jsbin.com/sofofam/16/edit)
+    Copyright (c) 2019 by miklpudding (http://jsbin.com/sofofam/16/edit)
 
-Released under the MIT license: http://jsbin.mit-license.org
+    Released under the MIT license: http://jsbin.mit-license.org
 -->
-<meta name="robots" content="noindex">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link href="https://cdn.muicss.com/mui-0.9.27/css/mui.min.css" rel="stylesheet" type="text/css" />
-    <script src="https://cdn.muicss.com/mui-0.9.27/js/mui.min.js"></script>
+    <link href="http://cdn.muicss.com/mui-0.9.27/css/mui.min.css" rel="stylesheet" type="text/css" />
+    <script src="http://cdn.muicss.com/mui-0.9.27/js/mui.min.js"></script>
     <style>
 
     td[data-value="NaN"] {
@@ -144,6 +142,7 @@ Released under the MIT license: http://jsbin.mit-license.org
     function formulaTableView4(form) {
       var host = form["host"].checked;
       var mvp = form["mvp"].checked;
+      var special = form["special"].checked;
       var half = parseInt(form["halfAP"].value);
       var view = document.getElementById("tableView4");
       var type = form["type"].value;
@@ -178,6 +177,9 @@ Released under the MIT license: http://jsbin.mit-license.org
           var honor_ = unit["Honor"] * count;
           var total = speed * count;
           var token = count * (tokens["join"] + (host ? tokens["host"] : 0) + (mvp ? tokens["mvp"] : 0));
+          if (special){
+            token += Math.ceil(honor_ * 0.00006);//"(+" + Math.ceil(honor_ * 0.00006) + ")";
+          }
           var dsp = (unit["HP"] / speed).toFixed();
           var xs = [dsp, count, chunk, ap, bp, token, honor_, StoHMS(total)];
 
@@ -635,9 +637,9 @@ Released under the MIT license: http://jsbin.mit-license.org
       <option value="97632">1～45箱 累計97632枚</option>
       <option value="100632">1～50箱 累計100632枚</option>
       </select>
-        自発 <input name="host" type="checkbox">
-        MVP <input name="mvp" type="checkbox">
-        <label>半汁回復量</label> <input name="halfAP" type="input" value="50" />
+        <input name="host" id="host1" type="checkbox"><label for="host1">自発</label> 
+        <input name="mvp" id="mvp1" type="checkbox"><label for="mvp1">MVP</label>
+        <label for="halfAP1">半汁回復量</label> <input name="halfAP" id="halfAP1" type="input" value="50" />
         
       </fieldset>
       </form>
@@ -689,9 +691,10 @@ Released under the MIT license: http://jsbin.mit-license.org
           <input name="time" value="60:00">
           <input name="honor" value="50000000" style="display:none;">
 
-          自発 <input name="host" type="checkbox">
-          MVP <input name="mvp" type="checkbox">
-          <label>半汁回復量</label> <input name="halfAP" type="input" value="50" />
+          <input name="host" id="host2" type="checkbox"><label for="host2">自発</label>
+          <input name="mvp" id="mvp2" type="checkbox"><label for="mvp2">MVP</label>
+          <label for="halfAP2">半汁回復量</label> <input name="halfAP" id="halfAP2" type="input" value="50" />
+          <input name="special" id="special2" type="checkbox"><label for="special2">スペシャルバトル報酬</label>
 
         <table class="mui-table mui-table--bordered">
           <thead>
@@ -1027,20 +1030,5 @@ Released under the MIT license: http://jsbin.mit-license.org
     formulaTableView3(document.getElementById("tokenForm"));
     formulaTableView4(document.getElementById("goalForm"));
     </script>
-  <!-- script src="http://static.jsbin.com/js/render/edit.js?4.1.7"></script -->
-  <!-- script>jsbinShowEdit && jsbinShowEdit({"static":"http://static.jsbin.com","root":"http://jsbin.com"});</script -->
-<script>
-(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
-
-ga('create', 'UA-1656750-34', 'auto');
-ga('require', 'linkid', 'linkid.js');
-ga('require', 'displayfeatures');
-ga('send', 'pageview');
-
-</script>
-
-</body>
+  </body>
 </html>
